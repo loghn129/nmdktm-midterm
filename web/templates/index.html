@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MK2 Điều khiển</title>
+<!-- Giao diện của web.py. Trang chỉ VẼ và gửi nút bấm; mọi tính toán (FK, góc đế thực, né vật cản) ở Python. -->
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>EEZYbotARM MK2 · Điều khiển<small>Phân loại quả theo màu · tránh vật cản</small></h1>
+  <span class="spacer"></span>
+  <span id="pillServer" class="pill off"><span class="dot"></span><span>Server: đang nối</span></span>
+  <span id="pillRobot" class="pill off"><span class="dot"></span><span>Robot: —</span></span>
+  <span id="pillAuto" class="pill off"><span class="dot"></span><span>AUTO: tắt</span></span>
+</header>
+
+<main>
+  <div class="col">
+    <!-- ===== Ảnh camera (server vẽ sẵn vùng quét, vật cản, đường né) ===== -->
+    <section class="card" id="viewWrap">
+      <img id="camImg" alt="Ảnh camera thật">
+      <div id="tcp" class="overlay">—</div>
+      <div id="stepBox" class="overlay">
+        <div><span class="muted">Robot:</span> <b id="fsmTxt">—</b></div>
+      </div>
+      <div id="estopBanner" class="overlay"><div>EMERGENCY STOP<small>Đã gửi AUTO OFF. Firmware chưa có lệnh dừng khẩn: tay thật đi nốt động tác đang chạy, nếu nguy hiểm hãy NGẮT NGUỒN SERVO.</small></div></div>
+    </section>
+
+    <!-- ===== Nhật ký ===== -->
+    <section class="card">
+      <h2>Nhật ký <span class="right"><button class="small" id="btnClearLog">Xóa</button></span></h2>
+      <div class="body">
+        <div id="log"></div>
+        <div class="cmdRow">
+          <input type="text" id="cmdInput" placeholder="Gõ lệnh firmware, vd: FK · COLOR · POL 300 90 190 · HELP" autocomplete="off">
+          <button id="btnSendCmd">Gửi</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Lịch sử hoạt động (history.csv) ===== -->
+    <section class="card">
+      <h2>Lịch sử hoạt động <span class="right muted small" id="histCount">0 dòng</span></h2>
+      <div class="body">
+        <div class="histBar">
+          <select id="histType">
+            <option value="">Tất cả</option>
+            <option value="CHU TRINH">Chu trình phân loại</option>
+            <option value="LOI">Lỗi &amp; cảnh báo</option>
+          </select>
+          <input type="date" id="histDate" title="Lọc theo ngày">
+          <button class="small" id="btnHistToday">Hôm nay</button>
+          <button class="small" id="btnHistAll">Mọi ngày</button>
+          <span class="spacer"></span>
+          <a class="btnLink" href="/history.csv" download="lich_su_hoat_dong.csv">Tải CSV</a>
+          <button class="small" id="btnHistClear">Xóa lịch sử</button>
+        </div>
+        <div class="histStats" id="histStats"></div>
+        <div class="histWrap">
+          <table class="histTable">
+            <thead><tr><th>Thời gian</th><th>Loại</th><th>Khay</th><th>Kết quả</th><th class="hideS">Đường đi</th><th class="hideS">Vật cản</th><th>Thời lượng</th><th>Chi tiết</th></tr></thead>
+            <tbody id="histBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <!-- ===== Điều khiển khớp ===== -->
+    <section class="card">
+      <h2>Điều khiển khớp <span class="right muted small">góc servo 0–180°</span></h2>
+      <div class="body" id="joints"></div>
+    </section>
+
+    <!-- ===== Nút chức năng nhanh ===== -->
+    <section class="card">
+      <h2>Chức năng nhanh</h2>
+      <div class="body">
+        <div class="quick">
+          <button id="btnHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home Position</button>
+          <button id="btnAuto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg><span>Auto Cycle</span></button>
+          <button id="btnTeach"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>Teach / Record</button>
+          <button id="btnPlay"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg><span>Phát lại điểm</span></button>
+          <button id="btnEstop">EMERGENCY STOP</button>
+          <button id="btnEstopReset">Reset E-Stop (mở khóa điều khiển)</button>
+        </div>
+        <div class="row-inline">
+          Chạy thử (RUN k):
+          <button class="small fruitBtn" data-bin="1"><i style="background:var(--ripe)"></i>Khay 1</button>
+          <button class="small fruitBtn" data-bin="2"><i style="background:var(--medium)"></i>Khay 2</button>
+          <button class="small fruitBtn" data-bin="3"><i style="background:var(--green)"></i>Khay 3</button>
+          <span class="muted small">không cần quả</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Tránh vật cản ===== -->
+    <section class="card">
+      <h2>Tránh vật cản <span class="right"><span id="pillCam" class="pill off"><span class="dot"></span><span>Camera</span></span></span></h2>
+      <div class="body">
+        <div class="avoidBtns">
+          <button id="btnCapture">Khóa camera</button>
+          <button id="btnPlanner">NÉ: —</button>
+          <button id="btnHeight">CAO: —</button>
+        </div>
+        <div class="hint" id="camHint">—</div>
+        <div class="reqBox" id="reqBox">
+          <div class="lbl">Kết quả REQ gần nhất</div>
+          <div><b id="reqKind">Chưa có</b> <span class="muted small" id="reqMeta"></span></div>
+          <div class="small" id="reqReason"></div>
+        </div>
+        <div class="muted small" id="obsCount" style="margin-top:8px">0 vật cản</div>
+      </div>
+    </section>
+
+    <!-- ===== Cảm biến ===== -->
+    <section class="card">
+      <h2>Trạng thái cảm biến</h2>
+      <div class="body">
+        <div class="tile colorTile">
+          <div id="swatch"></div>
+          <div>
+            <div class="lbl">Màu nhận diện (TCS3200)</div>
+            <div id="colorName">Chưa có quả</div>
+            <div id="colorRead">—</div>
+          </div>
+        </div>
+        <div class="counts">
+          <div class="cnt"><div class="k"><i style="background:var(--ripe)"></i>Chín · K1</div><div class="v" id="cnt1">0</div></div>
+          <div class="cnt"><div class="k"><i style="background:var(--medium)"></i>Vừa · K2</div><div class="v" id="cnt2">0</div></div>
+          <div class="cnt"><div class="k"><i style="background:var(--green)"></i>Xanh · K3</div><div class="v" id="cnt3">0</div></div>
+          <div class="cnt"><div class="k">Tổng</div><div class="v" id="cntT">0</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Teach ===== -->
+    <section class="card">
+      <h2>Điểm đã lưu (Teach) <span class="right muted small" id="teachCount">0 điểm</span></h2>
+      <div class="body">
+        <div class="teachBar">
+          <span class="muted small">Thời gian mỗi bước</span>
+          <input type="number" id="teachMs" value="1200" min="200" max="10000" step="100"> ms
+          <span class="spacer"></span>
+          <button class="small" id="btnExport">Xuất JSON</button>
+          <button class="small" id="btnImport">Nhập JSON</button>
+          <button class="small" id="btnClearTeach">Xóa hết</button>
+          <input type="file" id="fileImport" accept="application/json,.json" hidden>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>#</th><th>Đế (servo)</th><th>Vai</th><th>Khuỷu</th><th>Kẹp</th><th></th></tr></thead>
+            <tbody id="teachBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Kết nối robot ===== -->
+    <section class="card">
+      <h2>Kết nối ESP32</h2>
+      <div class="body">
+        <div class="connRow" style="margin-top:0">
+          <select id="portSel"></select>
+          <button class="small" id="btnPorts">Quét cổng</button>
+          <button class="primary" id="btnConnect">Kết nối</button>
+          <button id="btnDisconnect">Ngắt</button>
+        </div>
+        <div class="hint">web.py giữ cổng COM và camera: đóng Thonny / Serial Monitor trước khi kết nối. Góc khớp hiển thị là góc ESP32 báo qua lệnh FK (web gửi FK sau mỗi động tác tay).</div>
+      </div>
+    </section>
+  </div>
+</main>
+<div id="toast"></div>
+<script type="module" src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

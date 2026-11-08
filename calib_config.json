@@ -1,0 +1,162 @@
+{
+    "cam_id": 1,
+    "frame_width": 960,
+    "frame_height": 540,
+    "origin_u": 575,
+    "origin_v": 549,
+    "mm_per_px": 0.81313,
+    "invert_x": true,
+    "invert_y": false,
+    "M_px2mm": [
+        [
+            -0.9249281556013613,
+            0.041265381150096425,
+            509.1868709195261
+        ],
+        [
+            -0.026142875884874198,
+            -0.7263014307965867,
+            413.97509204558116
+        ],
+        [
+            9.939903071139412e-05,
+            0.001639415264260738,
+            1.0
+        ]
+    ],
+    "M_mm2px": [
+        [
+            -1.0666258129968353,
+            0.6024086087885079,
+            293.72970088958124
+        ],
+        [
+            0.051086159287061714,
+            -0.7406070817152568,
+            280.58048322800727
+        ],
+        [
+            2.2270142615973744e-05,
+            0.001154283722777815,
+            0.5108156253827787
+        ]
+    ],
+    "calib_rms_mm": 5.34,
+    "serial_port": "COM11",
+    "baud": 115200,
+    "diff_thresh": 30,
+    "min_area_px": 20,
+    "scan_r_min_mm": 115.0,
+    "scan_r_max_mm": 390.0,
+    "fan_pad_deg": 8.0,
+    "pick_ignore_mm": 35.0,
+    "bin_ignore_mm": 35.0,
+    "max_obs_radius_mm": 62.0,
+    "stable_frames": 8,
+    "stable_hits": 5,
+    "stable_hold": 4,
+    "match_mm": 25.0,
+    "filter_arm": false,
+    "arm_corridor_half_mm": 42.0,
+    "lock_camera": true,
+    "edge_thresh": 10,
+    "shadow_filter": true,
+    "merge_mm": 15.0,
+    "arm_comp": true,
+    "arm_max_deg": 6.0,
+    "arm_max_shift_mm": 10.0,
+    "arm_zone_mm": 55.0,
+    "arm_tip_ext_mm": 100.0,
+    "arm_match_min": 0.55,
+    "detect_mode": "mau",
+    "color_h": 148,
+    "color_h_width": 12,
+    "color_s_min": 25,
+    "color_s_max": 109,
+    "color_v_min": 40,
+    "color_min_area_px": 150,
+    "planner": "astar",
+    "safe_margin_mm": 22.0,
+    "safe_z_margin_mm": 15.0,
+    "detour_r_max_mm": null,
+    "obs_height_mm": 9999.0,
+    "calib_method": "robot",
+    "calib_z_mm": 80.0,
+    "calib_mirror": true,
+    "ruler_mm": 150.0,
+    "calib_points": [
+        {
+            "r": 355.0,
+            "deg": 58.0,
+            "u": 319,
+            "v": 86
+        },
+        {
+            "r": 355.0,
+            "deg": 74.0,
+            "u": 432,
+            "v": 36
+        },
+        {
+            "r": 355.0,
+            "deg": 90.0,
+            "u": 552,
+            "v": 17
+        },
+        {
+            "r": 355.0,
+            "deg": 106.0,
+            "u": 671,
+            "v": 24
+        },
+        {
+            "r": 355.0,
+            "deg": 122.0,
+            "u": 790,
+            "v": 66
+        },
+        {
+            "r": 268.5,
+            "deg": 122.0,
+            "u": 760,
+            "v": 135
+        },
+        {
+            "r": 268.5,
+            "deg": 106.0,
+            "u": 655,
+            "v": 101
+        },
+        {
+            "r": 268.5,
+            "deg": 90.0,
+            "u": 556,
+            "v": 95
+        },
+        {
+            "r": 268.5,
+            "deg": 74.0,
+            "u": 453,
+            "v": 109
+        },
+        {
+            "r": 268.5,
+            "deg": 58.0,
+            "u": 360,
+            "v": 155
+        }
+    ],
+    "calib_model": "phoi canh",
+    "calib_base_click": {
+        "u": 573,
+        "v": 534,
+        "deg": 90.0
+    },
+    "calib_extra_points": [],
+    "base_backlash_deg": 3.38,
+    "marker_hsv": [
+        169,
+        142,
+        225
+    ]
+}
